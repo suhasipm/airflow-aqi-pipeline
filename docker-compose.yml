@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  airflow:
+    image: apache/airflow:2.9.3
+    container_name: airflow
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./scripts:/opt/airflow/scripts
+      - ./data:/opt/airflow/data
+      - ./requirements.txt:/requirements.txt
+    command: >
+      bash -c "pip install --no-cache-dir -r /requirements.txt &&
+               airflow standalone"
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+
