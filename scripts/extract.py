@@ -2,7 +2,6 @@ import requests
 import pandas as pd
 from datetime import datetime
 
-
 def extract_aqi_data(city, token, timeout=10):
     """Fetch air quality data for a given city using the AQICN API."""
     url = f"https://api.waqi.info/feed/{city}/?token={token}"

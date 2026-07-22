@@ -1,7 +1,7 @@
-import os
 import pandas as pd
 from psycopg import connect
 from psycopg.rows import dict_row
+import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env
@@ -34,7 +34,6 @@ INSERT INTO air_quality_data (city, timestamp, aqi, pm25, pm10, temperature, hum
 VALUES (%s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (city, timestamp) DO NOTHING;
 """
-
 
 def load_to_postgres(csv_path):
     df = pd.read_csv(csv_path)
