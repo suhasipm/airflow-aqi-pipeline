@@ -1,7 +1,7 @@
+import os
 import pandas as pd
 from psycopg import connect
 from psycopg.rows import dict_row
-import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env
@@ -16,6 +16,26 @@ db_config = {
     "password": os.getenv("DB_PASSWORD")
 }
 
+CREATE_TABLE_QUERY = """
+CREATE TABLE IF NOT EXISTS air_quality_data (
+    city TEXT,
+    timestamp TIMESTAMP,
+    aqi FLOAT,
+    pm25 FLOAT,
+    pm10 FLOAT,
+    temperature FLOAT,
+    humidity FLOAT,
+    UNIQUE (city, timestamp)
+);
+"""
+
+INSERT_QUERY = """
+INSERT INTO air_quality_data (city, timestamp, aqi, pm25, pm10, temperature, humidity)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
+ON CONFLICT (city, timestamp) DO NOTHING;
+"""
+
+
 def load_to_postgres(csv_path):
     df = pd.read_csv(csv_path)
 
@@ -28,37 +48,23 @@ def load_to_postgres(csv_path):
         row_factory=dict_row
     )
 
-    create_table_query = """
-    CREATE TABLE IF NOT EXISTS air_quality_data (
-        city TEXT,
-        timestamp TIMESTAMP,
-        aqi FLOAT,
-        pm25 FLOAT,
-        pm10 FLOAT,
-        temperature FLOAT,
-        humidity FLOAT
-    );
-    """
-
-    with conn.cursor() as cursor:
-        cursor.execute(create_table_query)
-        for _, row in df.iterrows():
-            cursor.execute(
-                """
-                INSERT INTO air_quality_data (city, timestamp, aqi, pm25, pm10, temperature, humidity)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """,
-                (
-                    row["city"],
-                    row["timestamp"],
-                    row["aqi"],
-                    row["pm25"],
-                    row["pm10"],
-                    row["temperature"],
-                    row["humidity"]
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(CREATE_TABLE_QUERY)
+            for _, row in df.iterrows():
+                cursor.execute(
+                    INSERT_QUERY,
+                    (
+                        row["city"],
+                        row["timestamp"],
+                        row["aqi"],
+                        row["pm25"],
+                        row["pm10"],
+                        row["temperature"],
+                        row["humidity"]
+                    )
                 )
-            )
-
-    conn.commit()
-    conn.close()
-    print("Data loaded successfully into PostgreSQL.")
+        conn.commit()
+        print("Data loaded successfully into PostgreSQL.")
+    finally:
+        conn.close()

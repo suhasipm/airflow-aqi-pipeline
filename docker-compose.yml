@@ -1,9 +1,25 @@
 version: "3.8"
 
 services:
+  postgres:
+    image: postgres:16
+    container_name: aqi_postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-air_quality}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    env_file:
+      - .env
+
   airflow:
     image: apache/airflow:2.9.3
     container_name: airflow
+    depends_on:
+      - postgres
     environment:
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
@@ -21,3 +37,5 @@ services:
     env_file:
       - .env
 
+volumes:
+  pgdata:
